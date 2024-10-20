@@ -19,7 +19,10 @@ export class InMemoryUserRepository implements UserRepository {
   }
 
   async createOrUpdate(newUser: User): Promise<User> {
-    await this.db.createOrUpdate(newUser.id, newUser)
+    await this.db.createOrUpdate(newUser.id, newUser);
     return newUser;
+  }
+  async deleteUserById(id: string): Promise<void> {
+    await this.db.delete(id);
   }
 }

@@ -45,6 +45,16 @@ export class UserController {
 
         return await this.repository.createOrUpdate(updateUser(userId, data));
     }
+
+    async deleteUser(userId: string): Promise<void> {
+        const foundUser = await this.repository.getUserById(userId);
+
+        if (!foundUser) {
+            throw new UserNotFound(userId);
+        }
+
+        await this.repository.deleteUserById(userId);
+    }
 }
 
 

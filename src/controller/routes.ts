@@ -50,6 +50,16 @@ async function handGetUser(req: IncomingMessage, res: ServerResponse, userId: st
     }
 }
 
+async function handDeleteUser(req: IncomingMessage, res: ServerResponse, userId: string) {
+    try {
+        await controller.deleteUser(userId);
+        res.writeHead(204, { 'Content-Type': 'application/json' });
+        res.end();
+    } catch (err) {
+        handleError(req, res, err);
+    }
+}
+
 async function handleCreateUser(req: IncomingMessage, res: ServerResponse) {
     let body = '';
 
@@ -79,9 +89,9 @@ async function handleUpdateUser(req: IncomingMessage, res: ServerResponse, userI
     req.on('end', async () => {
         try {
             const userData = JSON.parse(body);
-            const updatedUser = await controller.updateUser(userId, userData);
+            await controller.updateUser(userId, userData);
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(updatedUser));
+            res.end();
         } catch (err) {
             handleError(req, res, err);
         }
@@ -121,6 +131,8 @@ export const requestListener: RequestListener = async (req: IncomingMessage, res
                 await handleUpdateUser(req, res, userId);
                 return;
             case "DELETE":
+                await handDeleteUser(req, res, userId);
+                return;
             default:
                 break;
         }
