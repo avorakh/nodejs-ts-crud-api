@@ -17,6 +17,10 @@ export class User {
         return this._id;
     }
 
+    set id(value: string) {
+        this._id = value;
+    }
+
     get username(): string {
         return this._username;
     }

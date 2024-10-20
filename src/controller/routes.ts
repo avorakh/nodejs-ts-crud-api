@@ -69,6 +69,25 @@ async function handleCreateUser(req: IncomingMessage, res: ServerResponse) {
     });
 }
 
+async function handleUpdateUser(req: IncomingMessage, res: ServerResponse, userId: string) {
+    let body = '';
+
+    req.on('data', chunk => {
+        body += chunk.toString();
+    });
+
+    req.on('end', async () => {
+        try {
+            const userData = JSON.parse(body);
+            const updatedUser = await controller.updateUser(userId, userData);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(updatedUser));
+        } catch (err) {
+            handleError(req, res, err);
+        }
+    });
+}
+
 export const requestListener: RequestListener = async (req: IncomingMessage, res: ServerResponse) => {
 
     req.on('error', err => {
@@ -98,8 +117,9 @@ export const requestListener: RequestListener = async (req: IncomingMessage, res
             case "GET":
                 await handGetUser(req, res, userId);
                 return;
-            case "POST":
             case "PUT":
+                await handleUpdateUser(req, res, userId);
+                return;
             case "DELETE":
             default:
                 break;

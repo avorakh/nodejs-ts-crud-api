@@ -8,7 +8,7 @@ export class InMemoryUserRepository implements UserRepository {
   constructor() {
     this.db = new InMemoryDb<User>();
     let user = new User("name", 50, [])
-    this.db.create(user.id, user);
+    this.db.createOrUpdate(user.id, user);
   }
 
   async getAll(): Promise<User[]> {
@@ -18,8 +18,8 @@ export class InMemoryUserRepository implements UserRepository {
     return await this.db.read(id);
   }
 
-  async create(newUser: User): Promise<User> {
-    await this.db.create(newUser.id, newUser)
+  async createOrUpdate(newUser: User): Promise<User> {
+    await this.db.createOrUpdate(newUser.id, newUser)
     return newUser;
   }
 }

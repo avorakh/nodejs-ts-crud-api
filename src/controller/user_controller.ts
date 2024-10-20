@@ -32,7 +32,18 @@ export class UserController {
     async createUser(data: UserInput): Promise<User> {
         validateUserInput(data);
         let userToCreate = convertToUser(data)
-        return await this.repository.create(userToCreate);
+        return await this.repository.createOrUpdate(userToCreate);
+    }
+
+    async updateUser(userId: string, data: UserInput): Promise<User> {
+        validateUserInput(data);
+        const foundUser = await this.repository.getUserById(userId);
+
+        if (!foundUser) {
+            throw new UserNotFound(userId);
+        }
+
+        return await this.repository.createOrUpdate(updateUser(userId, data));
     }
 }
 
@@ -40,6 +51,13 @@ export class UserController {
 function convertToUser(userInput: UserInput): User {
     const { username, age, hobbies } = userInput;
     return new User(username, age, hobbies);
+}
+
+function updateUser(id: string, serInput: UserInput) {
+    let updatedUser = convertToUser(serInput);
+
+    updatedUser.id = id;
+    return updatedUser;
 }
 
 function validateUserInput(input: UserInput): void {
