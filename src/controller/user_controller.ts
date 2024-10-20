@@ -1,6 +1,6 @@
 import { UserRepository } from '../repository/user_repository';
 import { User } from '../entity/user';
-import { ValidationError } from '../error/validation_error';
+import { ValidationError, UserNotFound } from '../error/validation_error';
 
 interface UserInput {
     username: string;
@@ -17,6 +17,16 @@ export class UserController {
 
     async getAllUsers(): Promise<User[]> {
         return await this.repository.getAll();
+    }
+
+    async geUser(userId: string): Promise<User> {
+
+        const foundUser = await this.repository.getUserById(userId);
+        if (!foundUser) {
+            throw new UserNotFound(userId);
+        }
+
+        return foundUser;
     }
 
     async createUser(data: UserInput): Promise<User> {

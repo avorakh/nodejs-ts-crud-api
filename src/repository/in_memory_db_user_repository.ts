@@ -14,6 +14,9 @@ export class InMemoryUserRepository implements UserRepository {
   async getAll(): Promise<User[]> {
     return this.db.readAll();
   }
+  async getUserById(id: string): Promise<User | undefined> {
+    return await this.db.read(id);
+  }
 
   async create(newUser: User): Promise<User> {
     await this.db.create(newUser.id, newUser)

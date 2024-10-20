@@ -1,7 +1,8 @@
 import { UserController } from './user_controller';
 import { userController } from '../configuration/app_config';
 import { IncomingMessage, ServerResponse, RequestListener } from 'http';
-import { ValidationError } from '../error/validation_error';
+import { ValidationError, UserNotFound } from '../error/validation_error';
+import { validate as uuidValidate } from 'uuid';
 
 const controller: UserController = userController;
 
@@ -11,11 +12,20 @@ function handleNotFound(req: IncomingMessage, res: ServerResponse) {
     res.end(JSON.stringify({ error: `Not Found with Path - [${req.url}], method - [${req.method}]` }));
 }
 
+function handleInvalidUserId(req: IncomingMessage, res: ServerResponse, userId: string) {
+    console.log(`Path - [${req.url}] with method - [${req.method}] is invalid`);
+    res.writeHead(400, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: `Invalid userId (not uuid) - [${userId}]` }));
+}
 
 function handleError(req: IncomingMessage, res: ServerResponse, err: any) {
     if (err instanceof ValidationError) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: err.message, errors: err.errors }));
+        return;
+    } else if (err instanceof UserNotFound) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: err.message }));
         return;
     }
 
@@ -28,6 +38,16 @@ async function handleGetUsers(res: ServerResponse) {
     let foundUsers = await controller.getAllUsers();
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify(foundUsers));
+}
+
+async function handGetUser(req: IncomingMessage, res: ServerResponse, userId: string) {
+    try {
+        const foundUser = await controller.geUser(userId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(foundUser));
+    } catch (err) {
+        handleError(req, res, err);
+    }
 }
 
 async function handleCreateUser(req: IncomingMessage, res: ServerResponse) {
@@ -55,13 +75,34 @@ export const requestListener: RequestListener = async (req: IncomingMessage, res
         handleError(req, res, err);
     });
 
+
+    const urlParts = req.url?.split('/').slice(1);
+    const method = req.method;
+
     if (req.url === "/api/users") {
-        if (req.method === "GET") {
+        if (method === "GET") {
             await handleGetUsers(res);
             return;
-        } else if (req.method === 'POST') {
+        } else if (method === 'POST') {
             await handleCreateUser(req, res);
             return;
+        }
+    } else if (urlParts && urlParts.length === 3 && req.url?.startsWith("/api/users/")) {
+        let userId = urlParts[2]
+        if (!uuidValidate(userId)) {
+            handleInvalidUserId(req, res, userId);
+            return;
+        }
+
+        switch (method) {
+            case "GET":
+                await handGetUser(req, res, userId);
+                return;
+            case "POST":
+            case "PUT":
+            case "DELETE":
+            default:
+                break;
         }
     }
 

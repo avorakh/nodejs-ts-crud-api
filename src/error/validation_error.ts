@@ -10,3 +10,11 @@ export class ValidationError extends Error {
         }
     }
 }
+
+export class UserNotFound extends Error {
+
+    constructor(userId: string) {
+        super(`User not found with Id - [${userId}]`);
+        this.name = "UserNotFound";
+    }
+}
