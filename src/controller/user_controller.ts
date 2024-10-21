@@ -156,6 +156,6 @@ export class UserController extends AbstractUserController {
     let updatedUser = convertToUser(updatUserData);
     updatedUser.id = userId;
     await this.repository.createOrUpdate(updatedUser);
-    sendJsonResponse(res, 200, undefined);
+    sendJsonResponse(res, 200, updatedUser);
   }
 }
