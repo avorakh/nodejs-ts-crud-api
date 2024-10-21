@@ -8,9 +8,13 @@ dotenv.config();
 
 const PORT = process.env.PORT || 4000;
 
-
 describe('User API', () => {
+  const testUsername = 'John Doe';
+  const testAge = 30;
+  const testHobbies = ['reading', 'gaming'];
+
   let server: http.Server;
+  let createdUserId : string;
 
   beforeAll((done) => {
     server = createServer(requestListener);
@@ -38,8 +42,9 @@ describe('User API', () => {
   });
 
   test('A new object is created by a POST api/users request (a response containing newly created record is expected)', (done) => {
+   
     const postData = JSON.stringify({
-      username: 'John Doe',
+      username: testUsername,
       age: 30,
       hobbies: ['reading', 'gaming'],
     });
@@ -66,9 +71,10 @@ describe('User API', () => {
         expect(res.statusCode).toBe(201);
         const response = JSON.parse(data);
         expect(response).toHaveProperty('id');
-        expect(response.username).toBe('John Doe');
-        expect(response.age).toBe(30);
+        expect(response.username).toBe(testUsername);
+        expect(response.age).toBe(testAge);
         expect(response.hobbies).toEqual(['reading', 'gaming']);
+        createdUserId = response.id; 
         done();
       });
     });
@@ -79,5 +85,25 @@ describe('User API', () => {
 
     req.write(postData);
     req.end();
+  });
+
+  test('Get the created user by ID with a GET api/users/{userId} request', (done) => {
+    http.get(`http://localhost:${PORT}/api/users/${createdUserId}`, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(200);
+        const user = JSON.parse(data);
+        expect(user.id).toBe(createdUserId);
+        expect(user.username).toBe(testUsername);
+        expect(user.age).toBe(testAge);
+        expect(user.hobbies).toEqual(testHobbies);
+        done();
+      });
+    });
   });
 });
