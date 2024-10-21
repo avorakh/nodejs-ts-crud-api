@@ -7,12 +7,10 @@ export class InMemoryUserRepository implements UserRepository {
 
   constructor() {
     this.db = new InMemoryDb<User>();
-    let user = new User("name", 50, []);
-    this.db.createOrUpdate(user.id, user);
   }
 
   async getAll(): Promise<User[]> {
-    return this.db.readAll();
+    return await this.db.readAll();
   }
   async getUserById(id: string): Promise<User | undefined> {
     return await this.db.read(id);

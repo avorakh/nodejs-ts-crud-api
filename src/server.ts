@@ -1,6 +1,6 @@
 import { createServer } from "http";
 import dotenv from "dotenv";
-import { requestListener } from "./controller/routes";
+import { requestListener } from "./configuration/app_config";
 
 dotenv.config();
 

@@ -1,3 +1,5 @@
+import { error } from "console";
+
 export class ValidationError extends Error {
   public errors: string[];
 
@@ -11,9 +13,16 @@ export class ValidationError extends Error {
   }
 }
 
-export class UserNotFound extends Error {
+export class UserNotFoundError extends Error {
   constructor(userId: string) {
     super(`User not found with Id - [${userId}]`);
-    this.name = "UserNotFound";
+    this.name = "UserNotFoundError";
+  }
+}
+
+export class InvalidUserIdError extends Error {
+  constructor(userId: string) {
+    super(`UserId is invalid- [${userId}]`);
+    this.name = "InvalidUserIdError";
   }
 }
