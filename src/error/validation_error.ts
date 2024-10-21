@@ -1,5 +1,3 @@
-import { error } from "console";
-
 export class ValidationError extends Error {
   public errors: string[];
 
