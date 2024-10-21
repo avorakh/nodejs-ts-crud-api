@@ -13,8 +13,12 @@ describe('User API', () => {
   const testAge = 30;
   const testHobbies = ['reading', 'gaming'];
 
+  const newUsername = 'John';
+  const newAge = 69;
+  const emptyHobbies: string[] = [];
+
   let server: http.Server;
-  let createdUserId : string;
+  let createdUserId: string;
 
   beforeAll((done) => {
     server = createServer(requestListener);
@@ -25,7 +29,7 @@ describe('User API', () => {
     server.close(done);
   });
 
-  test('Get all records with a GET api/users request (an empty array is expected)', (done) => {
+  test('should return OK status code and an empty array on a GET api/users request', (done) => {
     http.get(`http://localhost:${PORT}/api/users`, (res) => {
       let data = '';
 
@@ -41,8 +45,8 @@ describe('User API', () => {
     });
   });
 
-  test('A new object is created by a POST api/users request (a response containing newly created record is expected)', (done) => {
-   
+  test('should return CREATED and the created User object on a POST api/users request', (done) => {
+
     const postData = JSON.stringify({
       username: testUsername,
       age: 30,
@@ -74,7 +78,7 @@ describe('User API', () => {
         expect(response.username).toBe(testUsername);
         expect(response.age).toBe(testAge);
         expect(response.hobbies).toEqual(['reading', 'gaming']);
-        createdUserId = response.id; 
+        createdUserId = response.id;
         done();
       });
     });
@@ -87,7 +91,66 @@ describe('User API', () => {
     req.end();
   });
 
-  test('Get the created user by ID with a GET api/users/{userId} request', (done) => {
+
+  test('should return BAD REQUEST and the created User object on a POST api/users request', (done) => {
+
+    const invalidUpdatedData = JSON.stringify({
+      username: testUsername
+    });
+
+    const options = {
+      hostname: 'localhost',
+      port: PORT,
+      path: '/api/users',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(invalidUpdatedData),
+      },
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(400);
+        const response = JSON.parse(data);
+        expect(response).toHaveProperty('error');
+        done();
+      });
+    });
+
+    req.on('error', (e) => {
+      done(e);
+    });
+    req.write(invalidUpdatedData);
+    req.end();
+  });
+
+
+  test('should return OK and the found User object on a GET api/users request', (done) => {
+    http.get(`http://localhost:${PORT}/api/users`, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(200);
+        const responseData = JSON.parse(data);
+        console.error(responseData)
+        expect(responseData.length).toBe(1);
+        done();
+      });
+    });
+  });
+
+  test('should return OK and the found User object on a GET api/users/{userId} request', (done) => {
     http.get(`http://localhost:${PORT}/api/users/${createdUserId}`, (res) => {
       let data = '';
 
@@ -105,5 +168,303 @@ describe('User API', () => {
         done();
       });
     });
+  });
+
+
+  test('should return BAD REQUEST a PUT api/users/{userId} request', (done) => {
+    const invalidUpdatedData = JSON.stringify({
+      username: newUsername,
+      hobbies: emptyHobbies,
+    });
+
+    const options = {
+      hostname: 'localhost',
+      port: PORT,
+      path: `/api/users/${createdUserId}`,
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(invalidUpdatedData),
+      },
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(400);
+        const response = JSON.parse(data);
+        expect(response).toHaveProperty('error');
+        done();
+      });
+    });
+
+    req.on('error', (e) => {
+      done(e);
+    });
+    req.write(invalidUpdatedData);
+    req.end();
+  });
+
+  test('should return OK and an updated user object on a PUT api/users/{userId} request', (done) => {
+    const updatedData = JSON.stringify({
+      username: newUsername,
+      age: newAge,
+      hobbies: emptyHobbies,
+    });
+
+    const options = {
+      hostname: 'localhost',
+      port: PORT,
+      path: `/api/users/${createdUserId}`,
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(updatedData),
+      },
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(200);
+        const response = JSON.parse(data);
+        expect(response.id).toBe(createdUserId);
+        expect(response.username).toBe(newUsername);
+        expect(response.age).toBe(newAge);
+        expect(response.hobbies).toEqual(emptyHobbies);
+        done();
+      });
+    });
+
+    req.on('error', (e) => {
+      done(e);
+    });
+    req.write(updatedData);
+    req.end();
+  });
+
+
+  test('should return NO CONTENT on a DELETE api/users/{userId} request', (done) => {
+    const options = {
+      hostname: 'localhost',
+      port: PORT,
+      path: `/api/users/${createdUserId}`,
+      method: 'DELETE',
+    };
+
+    const req = http.request(options, (res) => {
+      expect(res.statusCode).toBe(204);
+      done();
+    });
+
+    req.on('error', (e) => {
+      done(e);
+    });
+
+    req.end();
+  });
+
+  test('should return NOT FOUND on a GET api/users/{userId} request', (done) => {
+    http.get(`http://localhost:${PORT}/api/users/${createdUserId}`, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(404);
+        const response = JSON.parse(data);
+        expect(response).toHaveProperty('error');
+        done();
+      });
+    });
+  });
+
+  test('should return NOT FOUND on a DELETE api/users/{userId} request', (done) => {
+    const options = {
+      hostname: 'localhost',
+      port: PORT,
+      path: `/api/users/${createdUserId}`,
+      method: 'DELETE',
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(404);
+        const response = JSON.parse(data);
+        expect(response).toHaveProperty('error');
+        done();
+      });
+    });
+
+    req.on('error', (e) => {
+      done(e);
+    });
+
+    req.end();
+  });
+
+
+  test('should return BAD REQUEST on a GET api/users/invalid request', (done) => {
+    http.get(`http://localhost:${PORT}/api/users/invalid`, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(400);
+        const response = JSON.parse(data);
+        expect(response).toHaveProperty('error');
+        done();
+      });
+    });
+  });
+
+  test('should return BAD REQUEST on a DELETE api/users/invalid request', (done) => {
+    const options = {
+      hostname: 'localhost',
+      port: PORT,
+      path: `/api/users/invalid`,
+      method: 'DELETE',
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(400);
+        const response = JSON.parse(data);
+        expect(response).toHaveProperty('error');
+        done();
+      });
+    });
+
+    req.on('error', (e) => {
+      done(e);
+    });
+
+    req.end();
+  });
+
+  test('should return NOT FOUND on a GET invalid/path request', (done) => {
+    http.get(`http://localhost:${PORT}/invalid/path`, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(404);
+        const response = JSON.parse(data);
+        expect(response).toHaveProperty('error');
+        done();
+      });
+    });
+  });
+
+  test('should return NOT FOUND a PUT api/users/{userId} request', (done) => {
+    const updatedData = JSON.stringify({
+      username: newUsername,
+      age: newAge,
+      hobbies: emptyHobbies,
+    });
+
+    const options = {
+      hostname: 'localhost',
+      port: PORT,
+      path: `/api/users/${createdUserId}`,
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(updatedData),
+      },
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(404);
+        const response = JSON.parse(data);
+        expect(response).toHaveProperty('error');
+        done();
+      });
+    });
+
+    req.on('error', (e) => {
+      done(e);
+    });
+    req.write(updatedData);
+    req.end();
+  });
+
+
+
+  test('should return BAD REQUEST a PUT api/users/invalid request', (done) => {
+    const updatedData = JSON.stringify({
+      username: newUsername,
+      age: newAge,
+      hobbies: emptyHobbies,
+    });
+
+    const options = {
+      hostname: 'localhost',
+      port: PORT,
+      path: "/api/users/invalid",
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(updatedData),
+      },
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        expect(res.statusCode).toBe(400);
+        const response = JSON.parse(data);
+        expect(response).toHaveProperty('error');
+        done();
+      });
+    });
+
+    req.on('error', (e) => {
+      done(e);
+    });
+    req.write(updatedData);
+    req.end();
   });
 });
